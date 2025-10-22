@@ -4,8 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\MasterItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class MasterItemsController extends Controller
+
+
+
 {
     public function index()
     {
@@ -23,8 +27,12 @@ class MasterItemsController extends Controller
 
         if (!empty($kode)) $data_search = $data_search->where('kode', $kode);
         if (!empty($nama)) $data_search = $data_search->where('nama', 'LIKE', '%' . $nama . '%');
-        if (!empty($hargamin)) $data_search = $data_search->where('harga_beli', '>=', $hargamin)->where('harga_beli', '<=', $hargamax);
-
+        if (!empty($hargamin)) {
+            $data_search->where('harga_beli', '>=', $hargamin);
+        }
+        if (!empty($hargamax)) {
+            $data_search->where('harga_beli', '<=', $hargamax);
+        }
         $data_search = $data_search->select('kode', 'nama', 'jenis', 'harga_beli', 'laba', 'supplier')->orderBy('id')->get();
 
 
@@ -71,7 +79,26 @@ class MasterItemsController extends Controller
         $data_item->kode = $kode;
         $data_item->supplier = $request->supplier;
         $data_item->jenis = $request->jenis;
-        $data_item->save();
+         if ($request->hasFile('foto')) {
+        $file = $request->file('foto');
+        $filename = time() . '_' . $file->getClientOriginalName();
+
+        // Simpan di storage/app/public/foto_barang
+        $path = $file->storeAs('public/foto_barang', $filename);
+
+        // Jika update, hapus foto lama
+        if ($method == 'edit' && $data_item->foto && \Storage::exists('public/' . $data_item->foto)) {
+            \Storage::delete('public/' . $data_item->foto);
+        }
+
+        $data_item->foto = 'foto_barang/' . $filename;
+    }
+
+    $data_item->save();
+
+    if ($request->has('kategori')) {
+    $data_item->kategori()->sync($request->kategori);
+    }
 
         return redirect('master-items');
     }
@@ -99,6 +126,13 @@ class MasterItemsController extends Controller
         }
     }
 
+
+    public function kategori()
+    {
+        return $this->belongsToMany(KategoriItem::class, 'item_kategori', 'master_item_id', 'kategori_item_id');
+    }
+
+
     private function getRandomSupplier()
     {
         $array = ['Tokopaedi','Bukulapuk','TokoBagas','E Commurz','Blublu'];
@@ -112,4 +146,6 @@ class MasterItemsController extends Controller
         $random = rand(0,4);
         return $array[$random];
     }
+
+    
 }

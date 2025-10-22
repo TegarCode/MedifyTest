@@ -13,27 +13,25 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('master_items', function (Blueprint $table) {
+        Schema::create('master_pasiens', function (Blueprint $table) {
             $table->id();
-            $table->string('kode');
+            $table->string('kode')->unique(); // untuk kode pasien, misal "00001"
             $table->string('nama');
-            $table->integer('harga_beli');
-            $table->integer('laba');
-            $table->string('supplier');
-            $table->string('jenis');
-            $table->text('foto');
+            $table->enum('jenis_kelamin', ['L', 'P'])->nullable(); // L = Laki-laki, P = Perempuan
+            $table->date('tanggal_lahir')->nullable();
+            $table->string('alamat')->nullable();
+            $table->string('no_hp')->nullable();
             $table->timestamps();
-            $table->softDeletes();
-        });
+                });
     }
 
-    /**
+    /** 
      * Reverse the migrations.
      *
      * @return void
      */
     public function down()
     {
-        Schema::dropIfExists('master_items');
+        Schema::dropIfExists('master_pasiens');
     }
 };
